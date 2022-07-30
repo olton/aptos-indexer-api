@@ -1,0 +1,46 @@
+{
+  "name": "@olton/aptos-indexer-api",
+  "version": "0.0.1",
+  "description": "Aptos Indexer API",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olton/aptos-indexer-api.git"
+  },
+  "keywords": [
+    "graphql",
+    "javascript",
+    "node",
+    "aptos"
+  ],
+  "author": "Serhii Pimenov <serhii@pimenov.com.ua>",
+  "bugs": {
+    "url": "https://github.com/olton/aptos-indexer-api/issues"
+  },
+  "homepage": "https://github.com/olton/aptos-indexer-api#readme",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node .",
+    "dev": "nodemon ."
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/olton"
+  },
+  "browserslist": [
+    "last 1 Chrome versions",
+    "last 1 Firefox versions",
+    "last 1 Opera versions",
+    "last 1 Edge versions"
+  ],
+  "dependencies": {
+    "@olton/datetime": "^0.2.1",
+    "@olton/string": "^0.2.1",
+    "pg": "^8.7.3",
+    "ws": "^8.8.1"
+  },
+  "devDependencies": {
+    "jest": "^28.1.3",
+    "shx": "^0.3.4"
+  }
+}
