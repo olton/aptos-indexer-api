@@ -10,18 +10,24 @@
     "graphql",
     "javascript",
     "node",
-    "aptos"
+    "aptos",
+    "indexer",
+    "api"
   ],
   "author": "Serhii Pimenov <serhii@pimenov.com.ua>",
   "bugs": {
     "url": "https://github.com/olton/aptos-indexer-api/issues"
   },
   "homepage": "https://github.com/olton/aptos-indexer-api#readme",
+  "source": "src/index.js",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
     "start": "node .",
-    "dev": "nodemon ."
+    "dev": "nodemon .",
+    "prebuild": "shx rm -rf dist/* lib/*",
+    "build": "rollup --config",
+    "test": "npm run build & jest"
   },
   "license": "MIT",
   "publishConfig": {
@@ -40,7 +46,8 @@
     "ws": "^8.8.1"
   },
   "devDependencies": {
-    "jest": "^28.1.3",
-    "shx": "^0.3.4"
+    "@babel/preset-env": "^7.18.2",
+    "babel-jest": "^28.1.1",
+    "jest": "^28.1.1"
   }
 }

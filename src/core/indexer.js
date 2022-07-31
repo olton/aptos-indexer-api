@@ -1,7 +1,11 @@
 import {Postgres} from "./postgres.js";
 
 const defaultIndexerOptions = {
-    debug: true
+    debug: true,
+    max: 20,
+    allowExitOnIdle: true,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 0
 }
 
 export class Indexer {
@@ -11,6 +15,8 @@ export class Indexer {
         }
         this.options = Object.assign({}, defaultIndexerOptions, options)
         this.pool = null
+
+        this.createDBConnection()
     }
 }
 

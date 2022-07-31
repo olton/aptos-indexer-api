@@ -1,5 +1,4 @@
 .idea
 node_modules
 .npmrc
-config.json
-!config.example.json
+__tests__/config.js

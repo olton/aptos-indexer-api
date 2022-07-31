@@ -1,19 +1,23 @@
 import {debug, error, info} from "../helpers/logging.js";
-import {datetime} from "@olton/datetime";
 import pg from "pg";
 
 const { Pool } = pg
 
 export const Postgres = {
     createPool() {
-        const {proto, host, port, user, database, password} = this.connect
+        const {host, port, user, database, password} = this.connect
+        const {max, allowExitOnIdle, connectionTimeoutMillis, idleTimeoutMillis} = this.options
 
         const pool = new Pool({
             user,
-            host: `{proto}://{host}`,
+            host,
             database,
             password,
             port,
+            max,
+            allowExitOnIdle,
+            connectionTimeoutMillis,
+            idleTimeoutMillis
         })
 
         pool.on('error', (err, client) => {
@@ -31,7 +35,7 @@ export const Postgres = {
             if (err) {
                 throw err
             }
-            info(`DB clients pool created at ${datetime(+(res.rows[0].now)).format(config['date-format']['log'])}`)
+            info(`DB clients pool created`)
         })
     },
 
