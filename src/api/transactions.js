@@ -35,7 +35,7 @@ export const TransactionsAPI = {
         }
     },
 
-    async minting (addr, {limit = 25, offset = 0} = {}) {
+    async minting (addr, coin = "*", {limit = 25, offset = 0} = {}) {
         const sql = `
             select ${userTransFields}
             from transactions t
@@ -44,7 +44,7 @@ export const TransactionsAPI = {
             and payload->>'function' like '%mint%'
             and payload->>'arguments' like $1
             limit $2 offset $3
-        `
+        `.replace('%mint%', coin === "*" ? '%mint%' : `%${coin}::mint%`)
 
         try {
             const result = (await this.query(sql, [`%${addr}%`, limit, offset])).rows
