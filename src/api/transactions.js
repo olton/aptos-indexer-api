@@ -88,5 +88,59 @@ export const TransactionsAPI = {
         } catch (e) {
             return new Result(false, e.message, e.stack)
         }
+    },
+
+    async proposalTransactions (addr, {limit = 25, offset = 0}={}) {
+        const sql = `
+            select
+                type,
+                version,
+                t.hash,
+                state_root_hash,
+                event_root_hash,
+                success,
+                vm_status,
+                accumulator_root_hash,
+                t.inserted_at,
+                proposer,
+                timestamp,
+                round,
+                id,
+                previous_block_votes,
+                epoch,
+                previous_block_votes_bitmap,
+                failed_proposer_indices
+            from transactions t
+            left join block_metadata_transactions bmt on t.hash = bmt.hash
+            where proposer = $1
+            limit $2 offset $3
+        `
+
+        try {
+            const result = (await this.query(sql, [addr, limit, offset])).rows
+            return new Result(true, "OK", result)
+        } catch (e) {
+            return new Result(false, e.message, e.stack)
+        }
+    },
+
+    async roundsPerEpoch (addr) {
+        const sql = `
+            select
+                epoch,
+                count(round) rounds
+            from transactions t
+            left join block_metadata_transactions bmt on t.hash = bmt.hash
+            where proposer = $1
+            group by epoch
+            order by epoch
+        `
+
+        try {
+            const result = (await this.query(sql, [addr])).rows
+            return new Result(true, "OK", result)
+        } catch (e) {
+            return new Result(false, e.message, e.stack)
+        }
     }
 }
