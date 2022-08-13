@@ -146,6 +146,7 @@ export const TransactionsAPI = {
 
     async transactions (addr, {order = "timestamp desc", limit = 25, offset = 0}={}) {
         const sql = `
+            with transactions as (
             select
                 type,
                 version,
@@ -173,9 +174,42 @@ export const TransactionsAPI = {
             from transactions t
             left join block_metadata_transactions bmt on t.hash = bmt.hash
             left join user_transactions ut on t.hash = ut.hash
-            where (bmt.proposer = $1 or ut.sender = $1)
+            where ut.sender = $1
+            
+            union all
+            
+            select
+                type,
+                version,
+                t.hash,
+                state_root_hash,
+                event_root_hash,
+                success,
+                vm_status,
+                accumulator_root_hash,
+                coalesce(bmt.proposer, ut.sender) as sender,
+                coalesce(bmt.timestamp, ut.timestamp, t.inserted_at) as timestamp,
+                bmt.round,
+                bmt.id,
+                bmt.previous_block_votes,
+                bmt.epoch,
+                bmt.previous_block_votes_bitmap,
+                bmt.failed_proposer_indices,
+                ut.signature,
+                ut.sequence_number,
+                ut.expiration_timestamp_secs,
+                t.gas_used,
+                ut.max_gas_amount,
+                ut.gas_unit_price,
+                t.inserted_at
+            from transactions t
+            left join block_metadata_transactions bmt on t.hash = bmt.hash
+            left join user_transactions ut on t.hash = ut.hash
+            where bmt.proposer = $1
+            )
+            select * from transactions
             order by %ORDER%
-            limit $2 offset $3
+            limit $2 offset $3        
         `.replace("%ORDER%", order)
 
         try {

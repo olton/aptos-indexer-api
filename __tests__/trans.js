@@ -1,8 +1,8 @@
 import {Indexer} from "../src/index.js";
-import {DBConfig} from "./config.js";
+import {db as DBConfig} from "./config.js";
 
 const i = new Indexer({
     ...DBConfig
 })
-const q = await i.transactions('0xc1452c6f8dc0cf6b6289872c7a885e7b4a4d673074186510da5499390297c7ca')
+const q = await i.transactions('0x780c1d3d602d7bfe22b2a6c27d77a8f1e6d61c23a123f857b6f64cad9318bf71')
 console.log(q)
