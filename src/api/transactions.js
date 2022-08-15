@@ -35,25 +35,6 @@ export const TransactionsAPI = {
         }
     },
 
-    async minting (addr, coin = "*", {limit = 25, offset = 0} = {}) {
-        const sql = `
-            select ${userTransFields}
-            from transactions t
-            left join user_transactions ut on t.hash = ut.hash
-            where type = 'user_transaction'
-            and payload->>'function' like '%mint%'
-            and payload->>'arguments' like $1
-            limit $2 offset $3
-        `.replace('%mint%', coin === "*" ? '%mint%' : `%${coin}::mint%`)
-
-        try {
-            const result = (await this.query(sql, [`%${addr}%`, limit, offset])).rows
-            return new Result(true, "OK", result)
-        } catch (e) {
-            return new Result(false, e.message, e.stack)
-        }
-    },
-
     async sentTransactions (addr, {limit = 25, offset = 0}) {
         const sql = `
             select ${userTransFields} 
@@ -181,10 +162,10 @@ export const TransactionsAPI = {
         }
     },
 
-    async mintTransactions (order = "1", {limit = 25, offset = 0}){
+    async mintTransactions (order = "1", {limit = 25, offset = 0} = {}){
         const sql = `
             select hash, mint, sender, receiver, function, timestamp
-             form v_minting    
+             from v_minting    
             order by %ORDER%          
             limit $1 offset $2  
         `.replace("%ORDER%", order)
@@ -197,15 +178,15 @@ export const TransactionsAPI = {
         }
     },
 
-    async mintAddress (address, order = "1", {limit = 25, offset = 0}){
+    async mintAddress (address, order = "1", {limit = 25, offset = 0} = {}){
         const sql = `
             select hash, mint, sender, receiver, function, timestamp
-            form v_minting    
+            from v_minting    
             where receiver = $1
             order by %ORDER%          
             limit $2 offset $3      
         `.replace("%ORDER%", order)
-
+        console.log(sql)
         try {
             const result = (await this.query(sql, [address, limit, offset])).rows
             return new Result(true, "OK", result)
