@@ -1,6 +1,6 @@
 {
   "name": "@olton/aptos-indexer-api",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Aptos Indexer API",
   "repository": {
     "type": "git",
