@@ -1,5 +1,8 @@
 import {Postgres} from "./postgres.js";
 import {TransactionsAPI} from "../api/transactions.js";
+import {CoinsApi} from "../api/coins.js";
+import {ValidatorsApi} from "../api/validators.js";
+import {GasApi} from "../api/gas.js";
 
 const defaultIndexerOptions = {
     debug: true,
@@ -21,4 +24,4 @@ export class Indexer {
     }
 }
 
-Object.assign(Indexer.prototype, Postgres, TransactionsAPI)
+Object.assign(Indexer.prototype, Postgres, TransactionsAPI, CoinsApi, ValidatorsApi, GasApi)

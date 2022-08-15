@@ -1,5 +1,10 @@
 import {Result} from "../helpers/result.js";
 
+export const TRANSACTION_TYPE_USER = 'user_transaction'
+export const TRANSACTION_TYPE_META = 'block_metadata_transaction'
+export const TRANSACTION_TYPE_CHECK = 'state_checkpoint_transaction'
+
+
 const userTransFields = `
     type,
     payload,
@@ -162,33 +167,28 @@ export const TransactionsAPI = {
         }
     },
 
-    async mintTransactions (order = "1", {limit = 25, offset = 0} = {}){
+    async transactionsInTimeByType (trunc = 'minute', type = TRANSACTION_TYPE_USER, limit = 60) {
         const sql = `
-            select hash, mint, sender, receiver, function, timestamp
-             from v_minting    
-            order by %ORDER%          
-            limit $1 offset $2  
-        `.replace("%ORDER%", order)
+        with trans as (select
+                    t.version,
+                    coalesce(ut.timestamp, m.timestamp, t.inserted_at) at time zone 'utc' as timestamp
+                from transactions t
+                    left join user_transactions ut on t.hash = ut.hash
+                    left join block_metadata_transactions m on t.hash = m.hash
+                where version > 0
+                and t.type = $1 
+                order by t.version desc limit 100000)
+            select
+                date_trunc('%TRUNC%', tr.timestamp) as minute,
+                count(tr.version)
+            from trans tr
+            group by 1
+            order by 1 desc
+            limit $2
+        `.replace("%TRUNC%", trunc)
 
         try {
-            const result = (await this.query(sql, [limit, offset])).rows
-            return new Result(true, "OK", result)
-        } catch (e) {
-            return new Result(false, e.message, e.stack)
-        }
-    },
-
-    async mintAddress (address, order = "1", {limit = 25, offset = 0} = {}){
-        const sql = `
-            select hash, mint, sender, receiver, function, timestamp
-            from v_minting    
-            where receiver = $1
-            order by %ORDER%          
-            limit $2 offset $3      
-        `.replace("%ORDER%", order)
-        console.log(sql)
-        try {
-            const result = (await this.query(sql, [address, limit, offset])).rows
+            const result = (await this.query(sql, [type, limit])).rows
             return new Result(true, "OK", result)
         } catch (e) {
             return new Result(false, e.message, e.stack)
