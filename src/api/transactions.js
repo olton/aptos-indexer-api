@@ -183,17 +183,8 @@ export const TransactionsAPI = {
 
     async mintTransactions (order = "1", {limit = 25, offset = 0}){
         const sql = `
-            SELECT t.hash,
-                   (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[1] AS receiver,
-                   (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[2] AS mint,
-                   t.payload ->> 'function'::text AS function,
-                   ut.sender,
-                   ut.timestamp
-            FROM transactions t
-                     LEFT JOIN user_transactions ut ON t.hash::text = ut.hash::text
-            WHERE t.type::text = 'user_transaction'::text
-              AND (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[2]::bigint > 0
-              AND (t.payload ->> 'function'::text) ~~ '%::mint'::text
+            select hash, mint, sender, receiver, function, timestamp
+             form v_minting    
             order by %ORDER%          
             limit $1 offset $2  
         `.replace("%ORDER%", order)
@@ -208,20 +199,11 @@ export const TransactionsAPI = {
 
     async mintAddress (address, order = "1", {limit = 25, offset = 0}){
         const sql = `
-            SELECT t.hash,
-                   (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[1] AS receiver,
-                   (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[2] AS mint,
-                   t.payload ->> 'function'::text AS function,
-                   ut.sender,
-                   ut.timestamp
-            FROM transactions t
-                     LEFT JOIN user_transactions ut ON t.hash::text = ut.hash::text
-            WHERE t.type::text = 'user_transaction'::text
-              and (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[1]::text = $1
-              AND (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[2]::bigint > 0
-              AND (t.payload ->> 'function'::text) ~~ '%::mint'::text    
+            select hash, mint, sender, receiver, function, timestamp
+            form v_minting    
+            where receiver = $1
             order by %ORDER%          
-            limit $1 offset $2      
+            limit $2 offset $3      
         `.replace("%ORDER%", order)
 
         try {
