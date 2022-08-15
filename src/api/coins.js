@@ -34,7 +34,7 @@ export const CoinsApi = {
         }
     },
 
-    async payments(order = "version", {limit = 25, offset = 0}){
+    async payments(order = "version", {limit = 25, offset = 0} = {}){
         const sql = `
             select version, hash, amount, receiver, sender, function, timestamp
             from v_payments
@@ -50,7 +50,7 @@ export const CoinsApi = {
         }
     },
 
-    async incomingPayments(address, order = "version", {limit = 25, offset = 0}){
+    async incomingPayments(address, order = "version", {limit = 25, offset = 0} = {}){
         const sql = `
             select version, hash, amount, receiver, sender, function, timestamp
             from v_payments
@@ -67,7 +67,7 @@ export const CoinsApi = {
         }
     },
 
-    async outgoingPayments(address, order = "version", {limit = 25, offset = 0}){
+    async outgoingPayments(address, order = "version", {limit = 25, offset = 0} = {}){
         const sql = `
             select version, hash, amount, receiver, sender, function, timestamp
             from v_payments

@@ -7,8 +7,19 @@ const i = new Indexer({
 
 let q
 
-q = await i.mintAddress("0x310dfd70948d6b22c5e6a573719e21f0437d4fa4986a106e439a1f9d44dcae0c")
+// q = await i.mintAddress("0x310dfd70948d6b22c5e6a573719e21f0437d4fa4986a106e439a1f9d44dcae0c")
+// console.log(q)
+//
+// q = await i.mintTransactions()
+// console.log(q)
+
+q = await i.payments()
 console.log(q)
 
-q = await i.mintTransactions()
+q = await i.incomingPayments("0x310dfd70948d6b22c5e6a573719e21f0437d4fa4986a106e439a1f9d44dcae0c")
 console.log(q)
+
+q = await i.outgoingPayments("0x310dfd70948d6b22c5e6a573719e21f0437d4fa4986a106e439a1f9d44dcae0c")
+console.log(q)
+
+
