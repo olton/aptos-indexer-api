@@ -145,32 +145,16 @@ export const TransactionsAPI = {
     },
 
     async transactions (addr, {order = "timestamp desc", limit = 25, offset = 0}={}) {
+        const fields = `
+                type, version, t.hash, state_root_hash, event_root_hash, success, vm_status, accumulator_root_hash, 
+                coalesce(bmt.proposer, ut.sender) as sender, coalesce(bmt.timestamp, ut.timestamp, t.inserted_at) as timestamp,
+                bmt.round, bmt.id, bmt.previous_block_votes, bmt.epoch, bmt.previous_block_votes_bitmap,
+                bmt.failed_proposer_indices, ut.signature, ut.sequence_number, ut.expiration_timestamp_secs,
+                t.gas_used, ut.max_gas_amount, ut.gas_unit_price, t.inserted_at
+        `
         const sql = `
             with transactions as (
-            select
-                type,
-                version,
-                t.hash,
-                state_root_hash,
-                event_root_hash,
-                success,
-                vm_status,
-                accumulator_root_hash,
-                coalesce(bmt.proposer, ut.sender) as sender,
-                coalesce(bmt.timestamp, ut.timestamp, t.inserted_at) as timestamp,
-                bmt.round,
-                bmt.id,
-                bmt.previous_block_votes,
-                bmt.epoch,
-                bmt.previous_block_votes_bitmap,
-                bmt.failed_proposer_indices,
-                ut.signature,
-                ut.sequence_number,
-                ut.expiration_timestamp_secs,
-                t.gas_used,
-                ut.max_gas_amount,
-                ut.gas_unit_price,
-                t.inserted_at
+            select ${fields}
             from transactions t
             left join block_metadata_transactions bmt on t.hash = bmt.hash
             left join user_transactions ut on t.hash = ut.hash
@@ -178,30 +162,7 @@ export const TransactionsAPI = {
             
             union all
             
-            select
-                type,
-                version,
-                t.hash,
-                state_root_hash,
-                event_root_hash,
-                success,
-                vm_status,
-                accumulator_root_hash,
-                coalesce(bmt.proposer, ut.sender) as sender,
-                coalesce(bmt.timestamp, ut.timestamp, t.inserted_at) as timestamp,
-                bmt.round,
-                bmt.id,
-                bmt.previous_block_votes,
-                bmt.epoch,
-                bmt.previous_block_votes_bitmap,
-                bmt.failed_proposer_indices,
-                ut.signature,
-                ut.sequence_number,
-                ut.expiration_timestamp_secs,
-                t.gas_used,
-                ut.max_gas_amount,
-                ut.gas_unit_price,
-                t.inserted_at
+            select ${fields}
             from transactions t
             left join block_metadata_transactions bmt on t.hash = bmt.hash
             left join user_transactions ut on t.hash = ut.hash
@@ -214,6 +175,57 @@ export const TransactionsAPI = {
 
         try {
             const result = (await this.query(sql, [addr, limit, offset])).rows
+            return new Result(true, "OK", result)
+        } catch (e) {
+            return new Result(false, e.message, e.stack)
+        }
+    },
+
+    async mintTransactions (order = "1", {limit = 25, offset = 0}){
+        const sql = `
+            SELECT t.hash,
+                   (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[1] AS receiver,
+                   (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[2] AS mint,
+                   t.payload ->> 'function'::text AS function,
+                   ut.sender,
+                   ut.timestamp
+            FROM transactions t
+                     LEFT JOIN user_transactions ut ON t.hash::text = ut.hash::text
+            WHERE t.type::text = 'user_transaction'::text
+              AND (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[2]::bigint > 0
+              AND (t.payload ->> 'function'::text) ~~ '%::mint'::text
+            order by %ORDER%          
+            limit $1 offset $2  
+        `.replace("%ORDER%", order)
+
+        try {
+            const result = (await this.query(sql, [limit, offset])).rows
+            return new Result(true, "OK", result)
+        } catch (e) {
+            return new Result(false, e.message, e.stack)
+        }
+    },
+
+    async mintAddress (address, order = "1", {limit = 25, offset = 0}){
+        const sql = `
+            SELECT t.hash,
+                   (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[1] AS receiver,
+                   (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[2] AS mint,
+                   t.payload ->> 'function'::text AS function,
+                   ut.sender,
+                   ut.timestamp
+            FROM transactions t
+                     LEFT JOIN user_transactions ut ON t.hash::text = ut.hash::text
+            WHERE t.type::text = 'user_transaction'::text
+              and (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[1]::text = $1
+              AND (ARRAY(SELECT btrim(jsonb_array_elements.value::text, '"'::text) AS btrim FROM jsonb_array_elements(t.payload -> 'arguments'::text) jsonb_array_elements(value)))[2]::bigint > 0
+              AND (t.payload ->> 'function'::text) ~~ '%::mint'::text    
+            order by %ORDER%          
+            limit $1 offset $2      
+        `.replace("%ORDER%", order)
+
+        try {
+            const result = (await this.query(sql, [address, limit, offset])).rows
             return new Result(true, "OK", result)
         } catch (e) {
             return new Result(false, e.message, e.stack)
