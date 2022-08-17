@@ -130,7 +130,40 @@ export const TransactionsAPI = {
         }
     },
 
-    async transactions (addr, {order = "timestamp desc", limit = 25, offset = 0}={}) {
+    async transactions({limit = 25, offset = 0} = {}){
+        const sql = `
+            select
+                t.version,
+                t.type,
+                t.payload->>'type' as payload_type,
+                t.payload->>'function' as payload_func,
+                t.payload->>'arguments' as payload_args,
+                t.hash,
+                t.gas_used,
+                t.success,
+                t.vm_status,
+                coalesce(ut.sender, m.proposer) as sender,
+                coalesce(ut.sequence_number, 0) as sequence_number,
+                coalesce(ut.gas_unit_price, 0) as gas_unit_price,
+                coalesce(ut.timestamp, m.timestamp) at time zone 'utc' as timestamp
+            from transactions t
+                left join user_transactions ut on t.hash = ut.hash
+                left join block_metadata_transactions m on t.hash = m.hash
+            where version > 0
+            and type != 'state_checkpoint_transaction'
+            order by t.version desc
+            limit $1 offset $2
+        `
+
+        try {
+            const result = (await this.query(sql, [limit, offset])).rows
+            return new Result(true, "OK", result)
+        } catch (e) {
+            return new Result(false, e.message, e.stack)
+        }
+    },
+
+    async transactionsAddress (addr, {order = "timestamp desc", limit = 25, offset = 0}={}) {
         const fields = `
                 type, version, t.hash, state_root_hash, event_root_hash, success, vm_status, accumulator_root_hash, 
                 coalesce(bmt.proposer, ut.sender) as sender, coalesce(bmt.timestamp, ut.timestamp, t.inserted_at) as timestamp,
